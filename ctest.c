@@ -141,3 +141,7 @@ ARCH_ARM
 ARCH_ARM64
 #endif
 
+#if defined(__riscv)
+ARCH_RISCV64
+#endif
+

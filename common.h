@@ -8,7 +8,7 @@
 /*                                                                   */
 /*   1. Redistributions of source code must retain the above         */
 /*      copyright notice, this list of conditions and the following  */
-/*      disclaimer.                                                  */
+/*  greASS    disclaimer.                                                  */
 /*                                                                   */
 /*   2. Redistributions in binary form must reproduce the above      */
 /*      copyright notice, this list of conditions and the following  */
@@ -406,6 +406,11 @@ please https://github.com/xianyi/OpenBLAS/issues/246
 
 #ifdef ARCH_MIPS
 #include "common_mips.h"
+#endif
+
+    
+#ifdef ARCH_RISCV64
+#include "common_riscv64.h"
 #endif
 
 #ifdef ARCH_MIPS64
