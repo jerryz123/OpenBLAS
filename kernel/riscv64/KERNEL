@@ -1,7 +1,7 @@
-SAMAXKERNEL  = ../arm/amax.c
-DAMAXKERNEL  = ../arm/amax.c
-CAMAXKERNEL  = ../arm/zamax.c
-ZAMAXKERNEL  = ../arm/zamax.c
+SAMAXKERNEL  = ../riscv64/amax.c
+DAMAXKERNEL  = ../riscv64/amax.c
+CAMAXKERNEL  = ../riscv64/zamax.c
+ZAMAXKERNEL  = ../riscv64/zamax.c
 
 SAMINKERNEL  = ../riscv64/amin.c
 DAMINKERNEL  = ../riscv64/amin.c
