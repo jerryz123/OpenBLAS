@@ -1,3 +1,2 @@
-ifdef BINARY64
-else
-endif
+CCOMMON_OPT += -Wa,-march=rv64gcv
+FCOMMON_OPT += -Wa,-march=rv64gcv
