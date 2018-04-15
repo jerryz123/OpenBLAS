@@ -37,49 +37,89 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "common.h"
 #include "rvv.h"
 
-int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT c, FLOAT s)
+#if defined(DSDOT)
+double CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
 {
 	BLASLONG i=0;
-        BLASLONG ix=0;
-        BLASLONG iy=0;
+	BLASLONG ix=0,iy=0;
+	double dot = 0.0 ;
 
+	if ( n < 0 )  return(dot);
 
-	if ( n <= 0     )  return(0);
+	while(i < n)
+	{
 
-        resetvcfg();
-        
-        setvcfg0(VFP32,    // *x
-                 VFP32,    // *y
-                 VFP32,    // *temp0
-                 SFP32);   // c
-        setvcfg2(SFP32,    // s
-                 SUINT32,  // inc_x
-                 SUINT32,  // inc_y
-                 SFP32);   //
+		dot += y[iy] * x[ix] ;
+		ix  += inc_x ;
+		iy  += inc_y ;
+		i++ ;
 
-
-        int vl = 0;
-        asm volatile ("vinsert v3, %0, x0" : : "r" (c));
-        asm volatile ("vinsert v4, %0, x0" : : "r" (s));
-
-
-        while(i < n)
-          {
-            setvl(vl, n - i);
-            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-            asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-            asm volatile ("vmul  v2, v4, v1");     // temp0 = s*y[]
-            asm volatile ("vmadd v2, v3, v0, v2"); // temp0 = c*x[] + x*y[]
-            asm volatile ("vmul  v0, v4, v0");     // x     = s*x[]
-            asm volatile ("vmsub v1, v3, v1, v0"); // y     = c*y[] - s*x[]
-            asm volatile ("vsts  v2, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-            asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-
-            i = i + vl;
-            ix = ix + inc_x * vl;
-            iy = iy + inc_y * vl;
-          }
-
-	return(0);
+	}
+	return(dot);
 
 }
+#else
+FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
+{
+	BLASLONG i=0;
+	BLASLONG ix=0,iy=0;
+	float dot = 0.0;
+
+	if ( n < 0 )  return(dot);
+
+        resetvcfg();
+        setvcfg0(VFP32,    // *x
+                 VFP32,    // *y
+                 VFP32,    // *acc
+                 VFP32);   // *accshift
+        setvcfg2(SFP32,    // zero
+                 SFP32,
+                 SFP32,
+                 SFP32);
+
+        int vl = 0;
+
+        setvl(vl, n);
+        int ct = 0;
+        while (vl > 1)
+          {
+            ct++;
+            vl = vl >> 1;
+          }
+        vl = 1 << ct;
+        setvl(vl, vl);
+
+
+        asm volatile ("vsne    v2, v2, v2");   // v2 =
+
+
+	while(i < n)
+          {
+            while (n - i < vl)
+              {
+                asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+                setvl(vl, vl >> 1);
+                asm volatile ("vadd   v2, v2, v3"); // acc[] = acc[] + acc[+vl]
+              }
+
+            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
+            asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
+            asm volatile ("vmadd v2, v0, v1, v2"); // acc[] = x[]*y[]
+
+            i = i + vl;
+            ix = ix + vl * inc_x;
+            iy = iy + vl * inc_y;
+
+          }
+        while (vl > 1)
+          {
+            asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+            setvl(vl, vl >> 1);
+            asm volatile ("vadd   v2, v2, v3");
+          }
+        asm volatile ("vst      v2, 0(%0)" : : "r" (&dot));
+
+	return(dot);
+
+}
+#endif

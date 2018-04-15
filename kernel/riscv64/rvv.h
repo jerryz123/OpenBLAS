@@ -10,10 +10,10 @@
 #define SCALAR  (0 << 11)
 #define VECTOR  (4 << 11)
 
-#define W128    48 // 128 bits 
+#define W128    48 // 128 bits
 #define W64     32 // 64 bits
 #define W32     24 // 32 bits
-#define W16     16 // 16 bits 
+#define W16     16 // 16 bits
 #define W8      8  // 8 bits
 
 #define VUINT64 ((int64_t)0x2020)
@@ -42,8 +42,22 @@
 #define setvcfg0(vtype0, vtype1, vtype2, vtype3) \
   asm volatile ("csrw vcfg0, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
 
+
+
 #define setvcfg2(vtype0, vtype1, vtype2, vtype3) \
   asm volatile ("csrw vcfg2, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define resetvcfg() \
+  asm volatile ("csrw vcfg0, x0"); \
+  asm volatile ("csrw vcfg2, x0"); \
+  asm volatile ("csrw vcfg4, x0"); \
+  asm volatile ("csrw vcfg6, x0"); \
+  asm volatile ("csrw vcfg8, x0"); \
+  asm volatile ("csrw vcfg10, x0"); \
+  asm volatile ("csrw vcfg12, x0"); \
+  asm volatile ("csrw vcfg14, x0"); \
+
+
 
 #define setvl(rd, rs) \
   asm volatile("csrw vl, %0": : "r" (rs)); \
