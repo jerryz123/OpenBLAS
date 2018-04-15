@@ -30,17 +30,17 @@ IDMAXKERNEL  = ../riscv64/imax.c
 ISMINKERNEL  = ../riscv64/imin.c
 IDMINKERNEL  = ../riscv64/imin.c
 
-SASUMKERNEL  = ../riscv64/asum.c
+SASUMKERNEL  = ../riscv64/vec-sasum.c
 DASUMKERNEL  = ../riscv64/asum.c
 CASUMKERNEL  = ../riscv64/zasum.c
 ZASUMKERNEL  = ../riscv64/zasum.c
 
-SAXPYKERNEL  = ../riscv64/axpy.c
+SAXPYKERNEL  = ../riscv64/vec-saxpy.c
 DAXPYKERNEL  = ../riscv64/axpy.c
 CAXPYKERNEL  = ../riscv64/zaxpy.c
 ZAXPYKERNEL  = ../riscv64/zaxpy.c
 
-SCOPYKERNEL  = ../riscv64/copy.c
+SCOPYKERNEL  = ../riscv64/vec-scopy.c
 DCOPYKERNEL  = ../riscv64/copy.c
 CCOPYKERNEL  = ../riscv64/zcopy.c
 ZCOPYKERNEL  = ../riscv64/zcopy.c
@@ -50,7 +50,7 @@ DDOTKERNEL   = ../riscv64/dot.c
 CDOTKERNEL   = ../riscv64/zdot.c
 ZDOTKERNEL   = ../riscv64/zdot.c
 
-SNRM2KERNEL  = ../riscv64/nrm2.c
+SNRM2KERNEL  = ../riscv64/vec-snrm2.c
 DNRM2KERNEL  = ../riscv64/nrm2.c
 CNRM2KERNEL  = ../riscv64/znrm2.c
 ZNRM2KERNEL  = ../riscv64/znrm2.c
@@ -60,12 +60,12 @@ DROTKERNEL   = ../riscv64/rot.c
 CROTKERNEL   = ../riscv64/zrot.c
 ZROTKERNEL   = ../riscv64/zrot.c
 
-SSCALKERNEL  = ../riscv64/scal.c
+SSCALKERNEL  = ../riscv64/vec-sscal.c
 DSCALKERNEL  = ../riscv64/scal.c
 CSCALKERNEL  = ../riscv64/zscal.c
 ZSCALKERNEL  = ../riscv64/zscal.c
 
-SSWAPKERNEL  = ../riscv64/swap.c
+SSWAPKERNEL  = ../riscv64/vec-sswap.c
 DSWAPKERNEL  = ../riscv64/swap.c
 CSWAPKERNEL  = ../riscv64/zswap.c
 ZSWAPKERNEL  = ../riscv64/zswap.c

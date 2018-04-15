@@ -34,42 +34,33 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 **************************************************************************************/
 
+
 #include "common.h"
+#include <math.h>
 #include "rvv.h"
 
-#if defined(DSDOT)
-double CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
-{
-	BLASLONG i=0;
-	BLASLONG ix=0,iy=0;
-	double dot = 0.0 ;
+#if defined(DOUBLE)
 
-	if ( n < 0 )  return(dot);
+#define ABS fabs
 
-	while(i < n)
-	{
-
-		dot += y[iy] * x[ix] ;
-		ix  += inc_x ;
-		iy  += inc_y ;
-		i++ ;
-
-	}
-	return(dot);
-
-}
 #else
-FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
-{
-	BLASLONG i=0;
-	BLASLONG ix=0,iy=0;
-	float dot = 0.0;
 
-	if ( n < 0 )  return(dot);
+#define ABS fabsf
+
+#endif
+
+
+FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
+{
+        BLASLONG i=0;
+	BLASLONG ix=0;
+	float sum = 0.0;
+
+	if ( n < 0 )  return(sum);
 
         resetvcfg();
         setvcfg0(VFP32,    // *x
-                 VFP32,    // *y
+                 SFP32,    //
                  VFP32,    // *acc
                  VFP32);   // *accshift
 
@@ -83,11 +74,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
           }
         vl = 1 << ct;
         setvl(vl, vl);
-
-
-        asm volatile ("vsne    v2, v2, v2");   // v2 =
-
-
+        asm volatile ("vsne    v2, v2, v2");   // v2 =0
 	while(i < n)
           {
             while (n - i < vl)
@@ -98,13 +85,11 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
               }
 
             asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-            asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-            asm volatile ("vmadd v2, v0, v1, v2"); // acc[] = x[]*y[]
+            asm volatile ("vsgnjx v0, v0, v0");
+            asm volatile ("vadd v2, v0, v2"); // acc[] = x[]*y[]
 
             i = i + vl;
             ix = ix + vl * inc_x;
-            iy = iy + vl * inc_y;
-
           }
         while (vl > 1)
           {
@@ -112,9 +97,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
             setvl(vl, vl >> 1);
             asm volatile ("vadd   v2, v2, v3");
           }
-        asm volatile ("vst      v2, 0(%0)" : : "r" (&dot));
+        asm volatile ("vst      v2, 0(%0)" : : "r" (&sum));
 
-	return(dot);
-
+	return(sum);
 }
-#endif

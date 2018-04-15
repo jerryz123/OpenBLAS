@@ -35,9 +35,9 @@
 #define SINT16 ((int64_t)0x0050)
 #define SFP16 ((int64_t)0x00d0)
 
-#define setvcfg(vcfg, vtype0, vtype1, vtype2, vtype3) \
-  li t0, ((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)) ; \
-  csrw vcfg, t0
+/* #define setvcfg(vcfg, vtype0, vtype1, vtype2, vtype3) \ */
+/*   li t0, ((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)) ; \ */
+/*   csrw vcfg, t0 */
 
 #define setvcfg0(vtype0, vtype1, vtype2, vtype3) \
   asm volatile ("csrw vcfg0, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
