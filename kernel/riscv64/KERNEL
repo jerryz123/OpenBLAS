@@ -1,17 +1,17 @@
-SAMAXKERNEL  = ../riscv64/amax.c
+SAMAXKERNEL  = ../riscv64/vec-samax.c
 DAMAXKERNEL  = ../riscv64/amax.c
 CAMAXKERNEL  = ../riscv64/zamax.c
 ZAMAXKERNEL  = ../riscv64/zamax.c
 
-SAMINKERNEL  = ../riscv64/amin.c
+SAMINKERNEL  = ../riscv64/vec-samin.c
 DAMINKERNEL  = ../riscv64/amin.c
 CAMINKERNEL  = ../riscv64/zamin.c
 ZAMINKERNEL  = ../riscv64/zamin.c
 
-SMAXKERNEL   = ../riscv64/max.c
+SMAXKERNEL   = ../riscv64/vec-smax.c
 DMAXKERNEL   = ../riscv64/max.c
 
-SMINKERNEL   = ../riscv64/min.c
+SMINKERNEL   = ../riscv64/vec-smin.c
 DMINKERNEL   = ../riscv64/min.c
 
 ISAMAXKERNEL = ../riscv64/iamax.c
