@@ -59,12 +59,12 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
         setvcfg0(VFP64,    // *x
                  VFP64,    // *y
                  VFP64,    // *acc
-                 VFP64);   // *accshift
+                 SFP64);   //
 #else
         setvcfg0(VFP32,    // *x
                  VFP32,    // *y
                  VFP64,    // *acc
-                 VFP64);   // *accshift
+                 SFP64);   //
 #endif
         int vl = 0;
         setvl(vl, n);
@@ -85,9 +85,9 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
           {
             while (n - i < vl)
               {
-                asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+                asm volatile ("vslide v0, v2, %0" : : "r" (vl >> 1));
                 setvl(vl, vl >> 1);
-                asm volatile ("vadd   v2, v2, v3"); // acc[] = acc[] + acc[+vl]
+                asm volatile ("vadd   v2, v2, v0"); // acc[] = acc[] + acc[+vl]
               }
 
             asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
@@ -101,9 +101,9 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
           }
         while (vl > 1)
           {
-            asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+            asm volatile ("vslide v0, v2, %0" : : "r" (vl >> 1));
             setvl(vl, vl >> 1);
-            asm volatile ("vadd   v2, v2, v3");
+            asm volatile ("vadd   v2, v2, v0");
           }
         asm volatile ("vst      v2, 0(%0)" : : "r" (&dot));
 

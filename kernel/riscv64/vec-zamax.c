@@ -46,25 +46,27 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STRIDE_W 2
 #endif
 
+#define CABS1(x,i)	ABS(x[i])+ABS(x[i+1])
 
 FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
 {
 	BLASLONG i=0;
 	BLASLONG ix=0;
-	FLOAT maxf=0.0;
+	FLOAT maxf;
+	BLASLONG inc_x2 = inc_x << 1;
 
-	if (n <= 0 || inc_x <= 0) return(maxf);
-        resetvcfg();
+	if (n <= 0 || inc_x <= 0) return(0.0);
+resetvcfg();
 #if defined(DOUBLE)
-        setvcfg0(VFP64,    // *x
-                 SFP64,    //
+        setvcfg0(VFP64,    // *x real
+                 VFP64,    // *x imag
                  VFP64,    // *acc
-                 SFP64);
+                 SFP64);   // 
 #else
-        setvcfg0(VFP32,    // *x
-                 SFP32,    //
+        setvcfg0(VFP32,    // *x real
+                 VFP32,    // *x image
                  VFP32,    // *acc
-                 SFP32);
+                 SFP32);   // 
 #endif
         int vl = 0;
         int ct = 0;
@@ -76,8 +78,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
           }
         vl = 1 << ct;
         setvl(vl, vl);
-        asm volatile ("vinsert v1, %0, x0" : : "r" (x[0]));
-        asm volatile ("vsgnj   v2, v1, v1");   // v2 =0
+        asm volatile ("vsne    v2, v2, v2");   // v2 =0
 	while(i < n)
 	{
           while (n - i < vl)
@@ -86,10 +87,18 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
               setvl(vl, vl >> 1);
               asm volatile ("vmax   v2, v2, v0");
             }
-          asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
-          asm volatile ("vmax v2, v0, v2"); // acc[] = x[]*y[]
+          asm volatile ("vlds   v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+#if defined(DOUBLE)
+          asm volatile ("vlds   v1, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+#else
+          asm volatile ("vlds   v1, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+#endif
+          asm volatile ("vsgnjx v0, v0, v0"); // abs(real(x))
+          asm volatile ("vsgnjx v1, v1, v1"); // abs(imag(x))
+          asm volatile ("vadd   v0, v0, v1");
+          asm volatile ("vmax   v2, v0, v2"); // acc[] = x[]*y[]
           i = i + vl;
-          ix = ix + vl * inc_x;
+          ix = ix + vl * inc_x2;
 	}
         while (vl > 1)
           {
@@ -99,7 +108,6 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
           }
         asm volatile ("vst      v2, 0(%0)" : : "r" (&maxf));
 	return(maxf);
-
 }
 
 

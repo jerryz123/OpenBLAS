@@ -1,12 +1,12 @@
 SAMAXKERNEL  = ../riscv64/vec-amax.c
 DAMAXKERNEL  = ../riscv64/vec-amax.c
-CAMAXKERNEL  = ../riscv64/zamax.c
-ZAMAXKERNEL  = ../riscv64/zamax.c
+CAMAXKERNEL  = ../riscv64/vec-zamax.c
+ZAMAXKERNEL  = ../riscv64/vec-zamax.c
 
 SAMINKERNEL  = ../riscv64/vec-amin.c
 DAMINKERNEL  = ../riscv64/vec-amin.c
-CAMINKERNEL  = ../riscv64/zamin.c
-ZAMINKERNEL  = ../riscv64/zamin.c
+CAMINKERNEL  = ../riscv64/vec-zamin.c
+ZAMINKERNEL  = ../riscv64/vec-zamin.c
 
 SMAXKERNEL   = ../riscv64/vec-max.c
 DMAXKERNEL   = ../riscv64/vec-max.c
@@ -32,18 +32,18 @@ IDMINKERNEL  = ../riscv64/imin.c
 
 SASUMKERNEL  = ../riscv64/vec-asum.c
 DASUMKERNEL  = ../riscv64/vec-asum.c
-CASUMKERNEL  = ../riscv64/zasum.c
-ZASUMKERNEL  = ../riscv64/zasum.c
+CASUMKERNEL  = ../riscv64/vec-zasum.c
+ZASUMKERNEL  = ../riscv64/vec-zasum.c
 
 SAXPYKERNEL  = ../riscv64/vec-axpy.c
 DAXPYKERNEL  = ../riscv64/vec-axpy.c
-CAXPYKERNEL  = ../riscv64/zaxpy.c
-ZAXPYKERNEL  = ../riscv64/zaxpy.c
+CAXPYKERNEL  = ../riscv64/vec-zaxpy.c
+ZAXPYKERNEL  = ../riscv64/vec-zaxpy.c
 
 SCOPYKERNEL  = ../riscv64/vec-copy.c
 DCOPYKERNEL  = ../riscv64/vec-copy.c
-CCOPYKERNEL  = ../riscv64/zcopy.c
-ZCOPYKERNEL  = ../riscv64/zcopy.c
+CCOPYKERNEL  = ../riscv64/vec-zcopy.c
+ZCOPYKERNEL  = ../riscv64/vec-zcopy.c
 
 SDOTKERNEL   = ../riscv64/vec-dot.c
 DDOTKERNEL   = ../riscv64/vec-dot.c
