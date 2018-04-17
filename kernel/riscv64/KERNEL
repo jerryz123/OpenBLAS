@@ -47,28 +47,28 @@ ZCOPYKERNEL  = ../riscv64/vec-zcopy.c
 
 SDOTKERNEL   = ../riscv64/vec-dot.c
 DDOTKERNEL   = ../riscv64/vec-dot.c
-CDOTKERNEL   = ../riscv64/zdot.c
-ZDOTKERNEL   = ../riscv64/zdot.c
+CDOTKERNEL   = ../riscv64/vec-zdot.c
+ZDOTKERNEL   = ../riscv64/vec-zdot.c
 
 SNRM2KERNEL  = ../riscv64/vec-nrm2.c
 DNRM2KERNEL  = ../riscv64/vec-nrm2.c
-CNRM2KERNEL  = ../riscv64/znrm2.c
-ZNRM2KERNEL  = ../riscv64/znrm2.c
+CNRM2KERNEL  = ../riscv64/vec-znrm2.c
+ZNRM2KERNEL  = ../riscv64/vec-znrm2.c
 
 SROTKERNEL   = ../riscv64/vec-rot.c
 DROTKERNEL   = ../riscv64/vec-rot.c
-CROTKERNEL   = ../riscv64/zrot.c
-ZROTKERNEL   = ../riscv64/zrot.c
+CROTKERNEL   = ../riscv64/vec-zrot.c
+ZROTKERNEL   = ../riscv64/vec-zrot.c
 
 SSCALKERNEL  = ../riscv64/vec-scal.c
 DSCALKERNEL  = ../riscv64/vec-scal.c
-CSCALKERNEL  = ../riscv64/zscal.c
-ZSCALKERNEL  = ../riscv64/zscal.c
+CSCALKERNEL  = ../riscv64/vec-zscal.c
+ZSCALKERNEL  = ../riscv64/vec-zscal.c
 
 SSWAPKERNEL  = ../riscv64/vec-swap.c
 DSWAPKERNEL  = ../riscv64/vec-swap.c
-CSWAPKERNEL  = ../riscv64/zswap.c
-ZSWAPKERNEL  = ../riscv64/zswap.c
+CSWAPKERNEL  = ../riscv64/vec-zswap.c
+ZSWAPKERNEL  = ../riscv64/vec-zswap.c
 
 SGEMVNKERNEL = ../riscv64/gemv_n.c
 DGEMVNKERNEL = ../riscv64/gemv_n.c

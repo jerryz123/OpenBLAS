@@ -26,48 +26,57 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /**************************************************************************************
-* 2013/09/13 Saar
-*	 BLASTEST float		: OK
-* 	 BLASTEST double	: OK
+* 2013/09/14 Saar
+*	 BLASTEST float		: FAIL
+* 	 BLASTEST double	: FAIL
 * 	 CTEST			: OK
 * 	 TEST			: OK
 *
 **************************************************************************************/
 
 #include "common.h"
-#include <math.h>
 #include "rvv.h"
-
 #if defined(DOUBLE)
-#define ABS fabs
 #define STRIDE_W 3
 #else
-#define ABS fabsf
 #define STRIDE_W 2
 #endif
 
-
-
-FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
+OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
 {
 	BLASLONG i=0;
-        BLASLONG ix=0;
-	FLOAT scale = 0.0;
+	BLASLONG ix=0,iy=0;
+	FLOAT dot[2];
+	OPENBLAS_COMPLEX_FLOAT result;
+	BLASLONG inc_x2;
+	BLASLONG inc_y2;
 
-	if (n <= 0 || inc_x <= 0) return(0.0);
-	if ( n == 1 ) return( ABS(x[0]) );
+	dot[0]=0.0;
+	dot[1]=0.0;
 
+	CREAL(result) = 0.0 ;
+	CIMAG(result) = 0.0 ;
+
+	if ( n < 1 )  return(result);
         resetvcfg();
 #if defined(DOUBLE)
-        setvcfg0(VFP64,    // *x
-                 SFP64,
-                 VFP64,    // *acc
+        setvcfg0(VFP64,    // *x real
+                 VFP64,    // *y real
+                 VFP64,    // *acc real
+                 VFP64);   // temp
+        setvcfg2(VFP64,    // *x imag
+                 VFP64,    // *y imag
+                 VFP64,    // *acc imag
                  SFP64);
 #else
         setvcfg0(VFP32,    // *x
-                 SFP32,
+                 VFP32,    // *y
                  VFP32,    // *acc
-                 SFP32);
+                 VFP32);   // temp
+        setvcfg2(VFP32,    // *x
+                 VFP32,    // *y
+                 VFP32,    // *acc
+                 SFP64);
 #endif
         int vl = 0;
         setvl(vl, n);
@@ -79,32 +88,59 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
           }
         vl = 1 << ct;
         setvl(vl, vl);
-        asm volatile ("vsne    v2, v2, v2");   // v2 = 0
+	inc_x2 = 2 * inc_x ;
+	inc_y2 = 2 * inc_y ;
+        asm volatile ("vsne v2, v2, v2");
+        asm volatile ("vsne v6, v6, v6");
+
 	while(i < n)
-          {
-            while (n - i < vl)
-              {
+	{
+          while (n - i < vl)
+            {
                 asm volatile ("vslide v0, v2, %0" : : "r" (vl >> 1));
+                asm volatile ("vslide v4, v6, %0" : : "r" (vl >> 1));
                 setvl(vl, vl >> 1);
                 asm volatile ("vadd   v2, v2, v0"); // acc[] = acc[] + acc[+vl]
-              }
-
-            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
-            asm volatile ("vmadd v2, v0, v0, v2"); // acc[] = x[]*x[]
-
+                asm volatile ("vadd   v6, v6, v4");
+            }
+            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+#if defined(DOUBLE)
+            asm volatile ("vlds  v4, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v5, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+#else
+            asm volatile ("vlds  v4, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v5, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+#endif
+#if !defined(CONJ)
+            asm volatile ("vmadd  v2, v0, v1, v2");
+            asm volatile ("vnmsub v2, v4, v5, v2");
+            asm volatile ("vmadd  v6, v1, v4, v6");
+            asm volatile ("vmadd  v6, v0, v5, v6");
+#else
+            asm volatile ("vmadd  v2, v0, v1, v2");
+            asm volatile ("vmadd  v2, v4, v5, v2");
+            asm volatile ("vnmsub v6, v1, v4, v6");
+            asm volatile ("vmadd  v6, v0, v5, v6");
+#endif
             i = i + vl;
-            ix = ix + vl * inc_x;
-          }
+            ix = ix + vl * inc_x2;
+            iy = iy + vl * inc_y2;
+        }
+
         while (vl > 1)
           {
             asm volatile ("vslide v0, v2, %0" : : "r" (vl >> 1));
+            asm volatile ("vslide v4, v6, %0" : : "r" (vl >> 1));
             setvl(vl, vl >> 1);
-            asm volatile ("vadd   v2, v2, v0");
+            asm volatile ("vadd   v2, v2, v0"); // acc[] = acc[] + acc[+vl]
+            asm volatile ("vadd   v6, v6, v4");
           }
-        asm volatile ("vst      v2, 0(%0)" : : "r" (&scale));
+        asm volatile ("vst v2, 0(%0)" : : "r" (&dot[0]));
+        asm volatile ("vst v6, 0(%0)" : : "r" (&dot[1]));
 
-	return(sqrt(scale));
-        // TODO: Make this the more stable streaming algorithm
+	CREAL(result) = dot[0];
+	CIMAG(result) = dot[1];
+	return(result);
+
 }
-
-

@@ -53,9 +53,9 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
 	BLASLONG i=0;
         BLASLONG ix=0;
 	FLOAT scale = 0.0;
+        BLASLONG inc_x2 = inc_x << 1;
 
 	if (n <= 0 || inc_x <= 0) return(0.0);
-	if ( n == 1 ) return( ABS(x[0]) );
 
         resetvcfg();
 #if defined(DOUBLE)
@@ -89,11 +89,18 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
                 asm volatile ("vadd   v2, v2, v0"); // acc[] = acc[] + acc[+vl]
               }
 
-            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
+            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vmadd v2, v0, v0, v2"); // acc[] = x[]*x[]
 
+#if defined(DOUBLE)
+            asm volatile ("vlds  v0, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+#else
+            asm volatile ("vlds  v0, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+#endif
+            asm volatile ("vmadd v2, v0, v0, v2"); // acc[] = x[]*x[]
+            
             i = i + vl;
-            ix = ix + vl * inc_x;
+            ix = ix + vl * inc_x2;
           }
         while (vl > 1)
           {
@@ -104,7 +111,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
         asm volatile ("vst      v2, 0(%0)" : : "r" (&scale));
 
 	return(sqrt(scale));
-        // TODO: Make this the more stable streaming algorithm
+
 }
 
 

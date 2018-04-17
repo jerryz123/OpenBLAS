@@ -34,86 +34,87 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 **************************************************************************************/
 
-
 #include "common.h"
 #include "rvv.h"
-
 #if defined(DOUBLE)
 #define STRIDE_W 3
 #else
 #define STRIDE_W 2
 #endif
 
-int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r, FLOAT da_i, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *dummy, BLASLONG dummy2)
+int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT c, FLOAT s)
 {
 	BLASLONG i=0;
-	BLASLONG ix,iy;
+        BLASLONG ix=0;
+        BLASLONG iy=0;
         BLASLONG inc_x2 = inc_x << 1;
         BLASLONG inc_y2 = inc_y << 1;
-        int vl;
 
-	if ( n < 0     )  return(0);
-	if ( da_r == 0.0 && da_i == 0.0 ) return(0);
+	if ( n <= 0     )  return(0);
 
         resetvcfg();
 #if defined(DOUBLE)
-        setvcfg0(VFP64, // y[] real
-                 VFP64, // x[] real
-                 SFP64, // da  real
-                 VFP64);// y[] imag
-        setvcfg2(VFP64, // x[] imag
-                 SFP64, // da  imag
-                 SFP64, // 
-                 SFP64);
+        setvcfg0(VFP64,    // *x
+                 VFP64,    // *y
+                 VFP64,    // *temp0
+                 SFP64);   // c
+        setvcfg2(SFP64,    // s
+                 SFP32,    //
+                 SFP32,    //
+                 SFP32);   //
 #else
-        setvcfg0(VFP32, // y[] real
-                 VFP32, // x[] real
-                 SFP32, // da  real
-                 VFP32);// y[] imag
-        setvcfg2(VFP32, // x[] imag
-                 SFP32, // da  imag
-                 SFP32, // 
-                 SFP32);
+        setvcfg0(VFP32,    // *x
+                 VFP32,    // *y
+                 VFP32,    // *temp0
+                 SFP32);   // c
+        setvcfg2(SFP32,    // s
+                 SFP32,    //
+                 SFP32,    //
+                 SFP32);   //
 #endif
-	ix = 0;
-	iy = 0;
 
-        asm volatile ("vinsert v2, %0, x0" : : "r" (da_r));
-        asm volatile ("vinsert v5, %0, x0" : : "r" (da_i));
-        while (i < n)
+        int vl = 0;
+        asm volatile ("vinsert v3, %0, x0" : : "r" (c));
+        asm volatile ("vinsert v4, %0, x0" : : "r" (s));
+
+
+        while(i < n)
           {
             setvl(vl, n - i);
             asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#if defined(DOUBLE)
-            asm volatile ("vlds  v4, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v3, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vlds  v4, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v3, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
-
-#if !defined(CONJ)
-            asm volatile ("vmadd  v1, v2, v0, v1");
-            asm volatile ("vnmsub v1, v5, v4, v1");
-            asm volatile ("vmadd  v3, v2, v4, v3");
-            asm volatile ("vmadd  v3, v5, v0, v3");
-#else
-            asm volatile ("vmadd  v1, v2, v0, v1");
-            asm volatile ("vmadd  v1, v5, v4, v1");
-            asm volatile ("vnmsub v3, v2, v4, v3");
-            asm volatile ("vmadd  v3, v5, v0, v3");
-#endif
+            asm volatile ("vmul  v2, v4, v1");     // temp0 = s*y[]
+            asm volatile ("vmadd v2, v3, v0, v2"); // temp0 = c*x[] + x*y[]
+            asm volatile ("vmul  v0, v4, v0");     // x     = s*x[]
+            asm volatile ("vmsub v1, v3, v1, v0"); // y     = c*y[] - s*x[]
+            asm volatile ("vsts  v2, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+
+
 #if defined(DOUBLE)
-            asm volatile ("vsts  v3, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+            asm volatile ("vlds  v0, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v1, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
 #else
-            asm volatile ("vsts  v3, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+            asm volatile ("vlds  v0, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v1, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
 #endif
+            asm volatile ("vmul  v2, v4, v1");     // temp0 = s*y[]
+            asm volatile ("vmadd v2, v3, v0, v2"); // temp0 = c*x[] + x*y[]
+            asm volatile ("vmul  v0, v4, v0");     // x     = s*x[]
+            asm volatile ("vmsub v1, v3, v1, v0"); // y     = c*y[] - s*x[]
+#if defined(DOUBLE)
+            asm volatile ("vsts  v2, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vsts  v1, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+#else
+            asm volatile ("vsts  v2, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vsts  v1, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+#endif
+            
             i = i + vl;
-            ix = ix + vl * inc_x2;
-            iy = iy + vl * inc_y2;
+            ix = ix + inc_x2 * vl;
+            iy = iy + inc_y2 * vl;
           }
+
 	return(0);
 
 }
