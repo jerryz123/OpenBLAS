@@ -36,11 +36,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include "rvv.h"
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
+
 int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
 {
 	BLASLONG i=0;
@@ -69,13 +65,8 @@ int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
           setvl(vl, n - i);
           asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
           asm volatile ("vsts  v0, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#if defined(DOUBLE)
-          asm volatile ("vlds  v0, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-          asm volatile ("vsts  v0, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-          asm volatile ("vlds  v0, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-          asm volatile ("vsts  v0, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
+          asm volatile ("vlds  v0, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+          asm volatile ("vsts  v0, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
           i = i + vl;
           ix = ix + vl * inc_x2;
           iy = iy + vl * inc_y2;

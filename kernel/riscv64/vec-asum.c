@@ -39,14 +39,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "rvv.h"
 
-#if defined(DOUBLE)
-#define ABS fabs
-#define STRIDE_W 3
-#else
-#define ABS fabsf
-#define STRIDE_W 2
-#endif
-
 
 FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
 {

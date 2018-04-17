@@ -36,11 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include "rvv.h"
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
 
 int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT c, FLOAT s)
 {
@@ -91,25 +86,17 @@ int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT 
             asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
 
 
-#if defined(DOUBLE)
-            asm volatile ("vlds  v0, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v1, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vlds  v0, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v1, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
+
+            asm volatile ("vlds  v0, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v1, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
             asm volatile ("vmul  v2, v4, v1");     // temp0 = s*y[]
             asm volatile ("vmadd v2, v3, v0, v2"); // temp0 = c*x[] + x*y[]
             asm volatile ("vmul  v0, v4, v0");     // x     = s*x[]
             asm volatile ("vmsub v1, v3, v1, v0"); // y     = c*y[] - s*x[]
-#if defined(DOUBLE)
-            asm volatile ("vsts  v2, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vsts  v1, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vsts  v2, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vsts  v1, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
-            
+
+            asm volatile ("vsts  v2, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vsts  v1, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
+
             i = i + vl;
             ix = ix + inc_x2 * vl;
             iy = iy + inc_y2 * vl;

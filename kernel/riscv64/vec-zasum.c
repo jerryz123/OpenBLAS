@@ -39,14 +39,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "rvv.h"
 
-#if defined(DOUBLE)
-#define ABS fabs
-#define STRIDE_W 3
-#else
-#define ABS fabsf
-#define STRIDE_W 2
-#endif
-
 
 FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
 {
@@ -89,11 +81,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
               }
 
             asm volatile ("vlds   v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#if defined(DOUBLE)
-            asm volatile ("vlds   v1, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#else
-            asm volatile ("vlds   v1, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#endif
+            asm volatile ("vlds   v1, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vsgnjx v0, v0, v0");
             asm volatile ("vsgnjx v1, v1, v1");
             asm volatile ("vadd v0, v0, v1");

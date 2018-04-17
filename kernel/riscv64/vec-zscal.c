@@ -36,11 +36,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include "rvv.h"
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
+
 
 int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r,FLOAT da_i, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *dummy, BLASLONG dummy2)
 {
@@ -77,21 +73,15 @@ int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r,FLOAT da_i, F
               {
                 setvl(vl, n - i);
                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#if defined(DOUBLE)
-                asm volatile ("vlds  v3, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#else
-                asm volatile ("vlds  v3, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#endif
+                asm volatile ("vlds  v3, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+
                 asm volatile ("vmul  v4, v2, v3");
                 asm volatile ("vmsub v4, v1, v0, v4");
                 asm volatile ("vmul  v3, v3, v1");
                 asm volatile ("vmadd v3, v2, v0, v3");
                 asm volatile ("vsts  v4, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#if defined(DOUBLE)
-                asm volatile ("vsts  v3, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#else
-                asm volatile ("vsts  v3, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-#endif
+
+                asm volatile ("vsts  v3, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
                 i = i + vl;
                 ix = ix + vl * inc_x2;
               }

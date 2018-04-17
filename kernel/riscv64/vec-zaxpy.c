@@ -38,11 +38,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "common.h"
 #include "rvv.h"
 
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
 
 int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r, FLOAT da_i, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *dummy, BLASLONG dummy2)
 {
@@ -85,13 +80,8 @@ int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r, FLOAT da_i, 
             setvl(vl, n - i);
             asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#if defined(DOUBLE)
-            asm volatile ("vlds  v4, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v3, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vlds  v4, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v3, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
+            asm volatile ("vlds  v4, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v3, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
 
 #if !defined(CONJ)
             asm volatile ("vmadd  v1, v2, v0, v1");
@@ -105,11 +95,7 @@ int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da_r, FLOAT da_i, 
             asm volatile ("vmadd  v3, v5, v0, v3");
 #endif
             asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#if defined(DOUBLE)
-            asm volatile ("vsts  v3, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vsts  v3, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
+            asm volatile ("vsts  v3, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
             i = i + vl;
             ix = ix + vl * inc_x2;
             iy = iy + vl * inc_y2;

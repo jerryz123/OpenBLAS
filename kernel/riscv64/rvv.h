@@ -35,6 +35,15 @@
 #define SINT16 ((int64_t)0x0050)
 #define SFP16 ((int64_t)0x00d0)
 
+#if defined(DOUBLE)
+#define ABS fabs
+#define STRIDE_W 3
+#define STRIDE_O "8"
+#else
+#define ABS fabsf
+#define STRIDE_W 2
+#define STRIDE_O "4"
+#endif
 /* #define setvcfg(vcfg, vtype0, vtype1, vtype2, vtype3) \ */
 /*   li t0, ((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)) ; \ */
 /*   csrw vcfg, t0 */
@@ -42,10 +51,11 @@
 #define setvcfg0(vtype0, vtype1, vtype2, vtype3) \
   asm volatile ("csrw vcfg0, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
 
-
-
 #define setvcfg2(vtype0, vtype1, vtype2, vtype3) \
   asm volatile ("csrw vcfg2, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define setvcfg4(vtype0, vtype1, vtype2, vtype3)                        \
+  asm volatile ("csrw vcfg4, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
 
 #define resetvcfg() \
   asm volatile ("csrw vcfg0, x0"); \

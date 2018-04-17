@@ -36,11 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include "rvv.h"
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
 
 OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
 {
@@ -105,13 +100,8 @@ OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLA
             }
             asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
             asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#if defined(DOUBLE)
-            asm volatile ("vlds  v4, 8(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v5, 8(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#else
-            asm volatile ("vlds  v4, 4(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
-            asm volatile ("vlds  v5, 4(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
-#endif
+            asm volatile ("vlds  v4, " STRIDE_O "(%0), %1" : : "r" (&x[ix]), "r" (inc_x2 << STRIDE_W));
+            asm volatile ("vlds  v5, " STRIDE_O "(%0), %1" : : "r" (&y[iy]), "r" (inc_y2 << STRIDE_W));
 #if !defined(CONJ)
             asm volatile ("vmadd  v2, v0, v1, v2");
             asm volatile ("vnmsub v2, v4, v5, v2");
