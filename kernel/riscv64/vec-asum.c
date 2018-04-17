@@ -36,38 +36,72 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "common.h"
+#include <math.h>
 #include "rvv.h"
 
-int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT da, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *dummy, BLASLONG dummy2)
-{
-	BLASLONG i=0;
-	BLASLONG ix,iy;
-        int vl;
+#if defined(DOUBLE)
+#define ABS fabs
+#define STRIDE_W 3
+#else
+#define ABS fabsf
+#define STRIDE_W 2
+#endif
 
-	if ( n < 0     )  return(0);
-	if ( da == 0.0 ) return(0);
+
+FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
+{
+        BLASLONG i=0;
+	BLASLONG ix=0;
+	FLOAT sum = 0.0;
+
+	if ( n < 0 )  return(sum);
 
         resetvcfg();
-        setvcfg0(VFP32, // y[]
-                 VFP32, // x[]
-                 SFP32, // da
-                 SFP32);
-
-	ix = 0;
-	iy = 0;
-
-        asm volatile ("vinsert v2, %0, x0" : : "r" (da));
-        while (i < n)
+#if defined(DOUBLE)
+        setvcfg0(VFP64,    // *x
+                 SFP64,    //
+                 VFP64,    // *acc
+                 VFP64);   // *accshift
+#else
+        setvcfg0(VFP32,    // *x
+                 SFP32,    //
+                 VFP32,    // *acc
+                 VFP32);   // *accshift
+#endif
+        int vl = 0;
+        setvl(vl, n);
+        int ct = 0;
+        while (vl > 1)
           {
-            setvl(vl, n - i);
-            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-            asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-            asm volatile ("vmadd v1, v2, v0, v1");
-            asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
+            ct++;
+            vl = vl >> 1;
+          }
+        vl = 1 << ct;
+        setvl(vl, vl);
+        asm volatile ("vsne    v2, v2, v2");   // v2 =0
+	while(i < n)
+          {
+            while (n - i < vl)
+              {
+                asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+                setvl(vl, vl >> 1);
+                asm volatile ("vadd   v2, v2, v3"); // acc[] = acc[] + acc[+vl]
+              }
+
+            asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
+            asm volatile ("vsgnjx v0, v0, v0");
+            asm volatile ("vadd v2, v0, v2"); // acc[] = x[]*y[]
+
             i = i + vl;
             ix = ix + vl * inc_x;
-            iy = iy + vl * inc_y;
           }
-	return(0);
+        while (vl > 1)
+          {
+            asm volatile ("vslide v3, v2, %0" : : "r" (vl >> 1));
+            setvl(vl, vl >> 1);
+            asm volatile ("vadd   v2, v2, v3");
+          }
+        asm volatile ("vst      v2, 0(%0)" : : "r" (&sum));
 
+	return(sum);
 }

@@ -26,43 +26,50 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /**************************************************************************************
-* 2013/08/20 Saar
-*	 BLASTEST float		OK
-* 	 BLASTEST double	OK
+* 2013/09/14 Saar
+*	 BLASTEST float		: OK
+* 	 BLASTEST double	: OK
+* 	 CTEST			: OK
+* 	 TEST			: OK
 *
 **************************************************************************************/
 
 #include "common.h"
 #include "rvv.h"
-#include <stdio.h>
+#if defined(DOUBLE)
+#define STRIDE_W 3
+#else
+#define STRIDE_W 2
+#endif
 
-int CNAME(BLASLONG n, BLASLONG dummy0, BLASLONG dummy1, FLOAT dummy3, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *dummy, BLASLONG dummy2)
+int CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
 {
 	BLASLONG i=0;
 	BLASLONG ix=0,iy=0;
-	FLOAT temp;
 
 	if ( n < 0     )  return(0);
-
         resetvcfg();
+#if defined(DOUBLE)
+        setvcfg0(VFP64, // y[]
+                 SFP64,
+                 SFP64,
+                 SFP64);
+#else
         setvcfg0(VFP32, // y[]
-                 VFP32, // x[]
+                 SFP32,
                  SFP32,
                  SFP32);
+        #endif
         int vl;
-
 	while(i < n)
 	{
           setvl(vl, n - i);
-          asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-          asm volatile ("vlds  v1, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-          asm volatile ("vsts  v1, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << 2));
-          asm volatile ("vsts  v0, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << 2));
-
+          asm volatile ("vlds  v0, 0(%0), %1" : : "r" (&x[ix]), "r" (inc_x << STRIDE_W));
+          asm volatile ("vsts  v0, 0(%0), %1" : : "r" (&y[iy]), "r" (inc_y << STRIDE_W));
           i = i + vl;
           ix = ix + vl * inc_x;
           iy = iy + vl * inc_y;
-	}
+        }
 	return(0);
 
 }
