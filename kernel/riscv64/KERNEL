@@ -70,8 +70,8 @@ DSWAPKERNEL  = ../riscv64/vec-swap.c
 CSWAPKERNEL  = ../riscv64/vec-zswap.c
 ZSWAPKERNEL  = ../riscv64/vec-zswap.c
 
-SGEMVNKERNEL = ../riscv64/gemv_n.c
-DGEMVNKERNEL = ../riscv64/gemv_n.c
+SGEMVNKERNEL = ../riscv64/vec-gemv_n.c
+DGEMVNKERNEL = ../riscv64/vec-gemv_n.c
 CGEMVNKERNEL = ../riscv64/zgemv_n.c
 ZGEMVNKERNEL = ../riscv64/zgemv_n.c
 
