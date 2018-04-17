@@ -58,7 +58,7 @@ OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLA
         setvcfg0(VFP64,    // *x real
                  VFP64,    // *y real
                  VFP64,    // *acc real
-                 VFP64);   // temp
+                 SFP64);   // temp
         setvcfg2(VFP64,    // *x imag
                  VFP64,    // *y imag
                  VFP64,    // *acc imag
@@ -67,7 +67,7 @@ OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLA
         setvcfg0(VFP32,    // *x
                  VFP32,    // *y
                  VFP32,    // *acc
-                 VFP32);   // temp
+                 SFP32);   // temp
         setvcfg2(VFP32,    // *x
                  VFP32,    // *y
                  VFP32,    // *acc

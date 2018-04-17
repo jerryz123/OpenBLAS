@@ -35,14 +35,9 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **************************************************************************************/
 
 #include "common.h"
-#include "rvv.h"
-#if defined(DOUBLE)
-#define STRIDE_W 3
-#else
-#define STRIDE_W 2
-#endif
 
 OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
+
 {
 	BLASLONG i=0;
 	BLASLONG ix=0,iy=0;
@@ -58,36 +53,7 @@ OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLA
 	CIMAG(result) = 0.0 ;
 
 	if ( n < 1 )  return(result);
-        resetvcfg();
-#if defined(DOUBLE)
-        setvcfg0(VFP64,    // *x real
-                 VFP64,    // *y real
-                 VFP64,    // *acc real
-                 VFP64);   // *accshift real
-        setvcfg0(VFP64,    // *x imag
-                 VFP64,    // *y imag
-                 VFP64,    // *acc imag
-                 VFP64);   // *accshift imag
-#else
-        setvcfg0(VFP32,    // *x
-                 VFP32,    // *y
-                 VFP64,    // *acc
-                 VFP64);   // *accshift
-        setvcfg0(VFP32,    // *x
-                 VFP32,    // *y
-                 VFP64,    // *acc
-                 VFP64);   // *accshift
-#endif
-        int vl = 0;
-        setvl(vl, n);
-        int ct = 0;
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        vl = 1 << ct;
-        setvl(vl, vl);
+
 	inc_x2 = 2 * inc_x ;
 	inc_y2 = 2 * inc_y ;
 

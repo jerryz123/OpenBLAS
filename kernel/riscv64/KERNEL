@@ -77,8 +77,8 @@ ZGEMVNKERNEL = ../riscv64/vec-zgemv_n.c
 
 SGEMVTKERNEL = ../riscv64/vec-gemv_t.c
 DGEMVTKERNEL = ../riscv64/vec-gemv_t.c
-CGEMVTKERNEL = ../riscv64/zgemv_t.c
-ZGEMVTKERNEL = ../riscv64/zgemv_t.c
+CGEMVTKERNEL = ../riscv64/vec-zgemv_t.c
+ZGEMVTKERNEL = ../riscv64/vec-zgemv_t.c
 
 STRMMKERNEL	= ../generic/trmmkernel_2x2.c
 DTRMMKERNEL	= ../generic/trmmkernel_2x2.c
