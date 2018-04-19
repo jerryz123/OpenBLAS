@@ -36,9 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include <math.h>
-#include "rvv.h"
-
-
 
 #define CABS1(x,i)	ABS(x[i])+ABS(x[i+1])
 
@@ -65,12 +62,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
         int vl = 0;
         int ct = 0;
         setvl(vl, n);
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        vl = 1 << ct;
+        log2floor(vl, vl);
         setvl(vl, vl);
         asm volatile ("vinsert v3, %0, x0" : : "r" (x[0]));
         asm volatile ("vsgnj   v2, v3, v3");   // v2 =0

@@ -36,7 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include <math.h>
-#include "rvv.h"
 
 #define CABS1(x,i)	ABS(x[i])+ABS(x[i+1])
 
@@ -63,12 +62,7 @@ resetvcfg();
         int vl = 0;
         int ct = 0;
         setvl(vl, n);
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        vl = 1 << ct;
+        log2floor(vl, vl);
         setvl(vl, vl);
         asm volatile ("vsne    v2, v2, v2");   // v2 =0
 	while(i < n)

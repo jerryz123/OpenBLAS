@@ -36,7 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "common.h"
-#include "rvv.h"
 
 int CNAME(BLASLONG m, BLASLONG n, BLASLONG dummy1, FLOAT alpha_r, FLOAT alpha_i, FLOAT *a, BLASLONG lda, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y, FLOAT *buffer)
 {
@@ -72,15 +71,10 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG dummy1, FLOAT alpha_r, FLOAT alpha_i,
 	iy = 0;
 	a_ptr = a;
         int vl = 0;
+        int stvl;
         setvl(vl, m);
-        int ct = 0;
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        int stvl = 1 << ct;
-	for (j=0; j<n; j++)
+        log2floor(stvl, vl);
+        for (j=0; j<n; j++)
 	{
           setvl(vl, stvl);
           asm volatile ("vsne v2, v2, v2");

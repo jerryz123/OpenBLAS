@@ -78,182 +78,93 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef ASSEMBLER
 
-/* static inline unsigned int rpcc(void){ */
-/*   unsigned long ret; */
 
-/*   //  unsigned long long tmp; */
-/*   //__asm__ __volatile__("dmfc0 %0, $25, 1": "=r"(tmp):: "memory"); */
-/*   //ret=tmp; */
-/*   /\* __asm__ __volatile__(".set push \n" *\/ */
-/*   /\*                      ".set mips32r2\n" *\/ */
-/*   /\*                      "rdhwr %0, $2\n" *\/ */
-/*   /\*                      ".set pop": "=r"(ret):: "memory"); *\/ */
-
-/*   return ret; */
-/* } */
-//#define RPCC_DEFINED
-
-/* #ifndef NO_AFFINITY */
-/* #define WHEREAMI */
-/* static inline int WhereAmI(void){ */
-/*   int ret=0; */
-/*   /\* __asm__ __volatile__(".set push \n" *\/ */
-/*   /\*                      ".set mips32r2\n" *\/ */
-/*   /\*                      "rdhwr %0, $0\n" *\/ */
-/*   /\*                      ".set pop": "=r"(ret):: "memory"); *\/ */
-/*   return ret; */
-
-/* } */
-/* #endif */
-
-/* static inline int blas_quickdivide(blasint x, blasint y){ */
-/*   return x / y; */
-/* } */
-
-/* #ifdef DOUBLE */
-/* #define GET_IMAGE(res)  __asm__ __volatile__("mov.d %0, $f2" : "=f"(res)  : : "memory") */
-/* #else */
-/* #define GET_IMAGE(res)  __asm__ __volatile__("mov.s %0, $f2" : "=f"(res)  : : "memory") */
-/* #endif */
-
-/* #define GET_IMAGE_CANCEL */
+static inline int blas_quickdivide(blasint x, blasint y){
+  return x / y;
+}
 
 #endif
+#include <stdint.h>
+
+// vtypes
+#define INT     (0 << 6) // integer
+#define UINT    (1 << 6) // unsigned integer
+#define FP      (3 << 6) // floating point
+
+#define SCALAR  (0 << 11)
+#define VECTOR  (4 << 11)
+
+#define W128    48 // 128 bits
+#define W64     32 // 64 bits
+#define W32     24 // 32 bits
+#define W16     16 // 16 bits
+#define W8      8  // 8 bits
+
+#define VUINT64 ((int64_t)0x2020)
+#define VINT64 ((int64_t)0x2060)
+#define VFP64 ((int64_t)0x20e0)
+#define SUINT64 ((int64_t)0x0020)
+#define SINT64 ((int64_t)0x0060)
+#define SFP64 ((int64_t)0x00e0)
+#define VUINT32 ((int64_t)0x2018)
+#define VINT32 ((int64_t)0x2058)
+#define VFP32 ((int64_t)0x20d8)
+#define SUINT32 ((int64_t)0x0018)
+#define SINT32 ((int64_t)0x0058)
+#define SFP32 ((int64_t)0x00d8)
+#define VUINT16 ((int64_t)0x2010)
+#define VINT16 ((int64_t)0x2050)
+#define VFP16 ((int64_t)0x20d0)
+#define SUINT16 ((int64_t)0x0010)
+#define SINT16 ((int64_t)0x0050)
+#define SFP16 ((int64_t)0x00d0)
+
+#if defined(DOUBLE)
+#define ABS fabs
+#define STRIDE_W 3
+#define STRIDE_O "8"
+#else
+#define ABS fabsf
+#define STRIDE_W 2
+#define STRIDE_O "4"
+#endif
+/* #define setvcfg(vcfg, vtype0, vtype1, vtype2, vtype3) \ */
+/*   li t0, ((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)) ; \ */
+/*   csrw vcfg, t0 */
+
+#define setvcfg0(vtype0, vtype1, vtype2, vtype3) \
+  asm volatile ("csrw vcfg0, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define setvcfg2(vtype0, vtype1, vtype2, vtype3) \
+  asm volatile ("csrw vcfg2, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define setvcfg4(vtype0, vtype1, vtype2, vtype3)                        \
+  asm volatile ("csrw vcfg4, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define resetvcfg() \
+  asm volatile ("csrw vcfg0, x0"); \
+  asm volatile ("csrw vcfg2, x0"); \
+  asm volatile ("csrw vcfg4, x0"); \
+  asm volatile ("csrw vcfg6, x0"); \
+  asm volatile ("csrw vcfg8, x0"); \
+  asm volatile ("csrw vcfg10, x0"); \
+  asm volatile ("csrw vcfg12, x0"); \
+  asm volatile ("csrw vcfg14, x0"); \
 
 
-/* #ifdef ASSEMBLER */
 
-/* #define HALT	teq	$0, $0 */
-/* #define NOP	move	$0, $0 */
-
-/* #ifdef DOUBLE */
-/* #define LD	ldc1 */
-/* #define ST	sdc1 */
-/* #define MADD	madd.d */
-/* #define NMADD	nmadd.d */
-/* #define MSUB	msub.d */
-/* #define NMSUB	nmsub.d */
-/* #define ADD	add.d */
-/* #define SUB	sub.d */
-/* #define MUL	mul.d */
-/* #define MOV	mov.d */
-/* #define CMOVF	movf.d */
-/* #define CMOVT	movt.d */
-/* #define MTC	dmtc1 */
-/* #define FABS	abs.d */
-/* #define CMPEQ	c.eq.d */
-/* #define CMPLE	c.le.d */
-/* #define CMPLT	c.lt.d */
-/* #define	NEG	neg.d */
-/* #else */
-/* #define LD	lwc1 */
-/* #define ST	swc1 */
-/* #define MADD	madd.s */
-/* #define NMADD	nmadd.s */
-/* #define MSUB	msub.s */
-/* #define NMSUB	nmsub.s */
-/* #define ADD	add.s */
-/* #define SUB	sub.s */
-/* #define MUL	mul.s */
-/* #define MOV	mov.s */
-/* #define CMOVF	movf.s */
-/* #define CMOVT	movt.s */
-/* #define MTC	mtc1 */
-/* #define FABS	abs.s */
-/* #define CMPEQ	c.eq.s */
-/* #define CMPLE	c.le.s */
-/* #define CMPLT	c.lt.s */
-/* #define PLU     plu.ps */
-/* #define PLL     pll.ps */
-/* #define PUU     puu.ps */
-/* #define PUL     pul.ps */
-/* #define MADPS   madd.ps */
-/* #define CVTU    cvt.s.pu */
-/* #define CVTL    cvt.s.pl */
-/* #define	NEG	neg.s */
-/* #endif */
-
-/* #if   defined(__64BIT__) &&  defined(USE64BITINT) */
-/* #define LDINT	ld */
-/* #define LDARG	ld */
-/* #define SDARG	sd */
-/* #elif defined(__64BIT__) && !defined(USE64BITINT) */
-/* #define LDINT	lw */
-/* #define LDARG	ld */
-/* #define SDARG	sd */
-/* #else */
-/* #define LDINT	lw */
-/* #define LDARG	lw */
-/* #define SDARG	sw */
-/* #endif */
+#define setvl(rd, rs) \
+  asm volatile("csrw vl, %0": : "r" (rs)); \
+  asm volatile("csrr %0, vl": "=r" (rd)); \
 
 
-/* #ifndef F_INTERFACE */
-/* #define REALNAME ASMNAME */
-/* #else */
-/* #define REALNAME ASMFNAME */
-/* #endif */
-
-/* #if defined(ASSEMBLER) && !defined(NEEDPARAM) */
-
-/* #define PROLOGUE \ */
-/* 	.text ;\ */
-/* 	.set	mips64 ;\ */
-/* 	.align 5 ;\ */
-/* 	.globl	REALNAME ;\ */
-/* 	.ent	REALNAME ;\ */
-/* 	.type	REALNAME, @function ;\ */
-/* REALNAME: ;\ */
-/* 	.set	noreorder ;\ */
-/* 	.set	nomacro */
-
-/* #if defined(__linux__) && defined(__ELF__) */
-/* #define GNUSTACK .section .note.GNU-stack,"",@progbits */
-/* #else */
-/* #define GNUSTACK */
-/* #endif */
-
-/* #define EPILOGUE \ */
-/* 	.set	macro ;\ */
-/* 	.set	reorder ;\ */
-/* 	.end	REALNAME ;\ */
-/* 	GNUSTACK */
-
-/* #define PROFCODE */
-/* #endif */
-
-/* #endif */
-
-/* #define SEEK_ADDRESS */
+#define log2floor(rd, rs) \
+  int _temp0 = rs; \
+  int _temp1 = 0;\
+  while (_temp0 >>= 1) ++_temp1;\
+  rd = 1 << _temp1; \
 
 #define BUFFER_SIZE     ( 32 << 20)
-
-/* #if defined(LOONGSON3A) */
-/* #define PAGESIZE	(16UL << 10) */
-/* #define FIXED_PAGESIZE	(16UL << 10) */
-/* #endif */
-
-/* #if defined(LOONGSON3B) */
-/* #define PAGESIZE	(16UL << 10) */
-/* #define FIXED_PAGESIZE	(16UL << 10) */
-/* #endif */
-
-/* #ifndef PAGESIZE */
-/* #define PAGESIZE	(64UL << 10) */
-/* #endif */
-/* #define HUGE_PAGESIZE   ( 2 << 20) */
-
-//#define BASE_ADDRESS (START_ADDRESS - BUFFER_SIZE * MAX_CPU_NUMBER)
 #define SEEK_ADDRESS
-/* #ifndef MAP_ANONYMOUS */
-/* #define MAP_ANONYMOUS MAP_ANON */
-/* #endif */
-
-/* #if defined(LOONGSON3A) || defined(LOONGSON3B) */
-/* #define PREFETCHD_(x) ld $0, x */
-/* #define PREFETCHD(x)  PREFETCHD_(x) */
-/* #else */
-/* #define PREFETCHD(x) */
-/* #endif */
 
 #endif

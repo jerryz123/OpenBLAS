@@ -36,7 +36,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 #include <math.h>
-#include "rvv.h"
 
 
 
@@ -65,13 +64,7 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
 #endif
         int vl = 0;
         setvl(vl, n);
-        int ct = 0;
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        vl = 1 << ct;
+        log2floor(vl, vl);
         setvl(vl, vl);
         asm volatile ("vsne    v2, v2, v2");   // v2 = 0
 	while(i < n)

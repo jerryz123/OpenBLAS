@@ -85,7 +85,7 @@ DTRMMKERNEL	= ../generic/trmmkernel_2x2.c
 CTRMMKERNEL	= ../generic/ztrmmkernel_2x2.c
 ZTRMMKERNEL	= ../generic/ztrmmkernel_2x2.c
 
-SGEMMKERNEL    =  ../generic/gemmkernel_2x2.c
+SGEMMKERNEL    =  ../riscv64/vec-gemmkernel_2x2.c
 SGEMMONCOPY    =  ../generic/gemm_ncopy_2.c
 SGEMMOTCOPY    =  ../generic/gemm_tcopy_2.c
 SGEMMONCOPYOBJ =  sgemm_oncopy.o
@@ -128,6 +128,15 @@ ZTRSMKERNEL_LN	= ../generic/trsm_kernel_LN.c
 ZTRSMKERNEL_LT	= ../generic/trsm_kernel_LT.c
 ZTRSMKERNEL_RN	= ../generic/trsm_kernel_RN.c
 ZTRSMKERNEL_RT	= ../generic/trsm_kernel_RT.c
+
+SSYMV_U_KERNEL =  ../generic/symv_k.c
+SSYMV_L_KERNEL =  ../generic/symv_k.c
+DSYMV_U_KERNEL =  ../generic/symv_k.c
+DSYMV_L_KERNEL =  ../generic/symv_k.c
+CSYMV_U_KERNEL =  ../generic/zsymv_k.c
+CSYMV_L_KERNEL =  ../generic/zsymv_k.c
+ZSYMV_U_KERNEL =  ../generic/zsymv_k.c
+ZSYMV_L_KERNEL =  ../generic/zsymv_k.c
 
 LSAME_KERNEL = ../generic/lsame.c
 

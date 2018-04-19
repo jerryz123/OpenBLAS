@@ -36,7 +36,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "common.h"
-#include "rvv.h"
+
 #if defined(DOUBLE)
 #define DOT_K ddot_k
 #else
@@ -66,13 +66,8 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG dummy1, FLOAT alpha, FLOAT *a, BLASLO
 	a_ptr = a;
         int vl = 0;
         setvl(vl, m);
-        int ct = 0;
-        while (vl > 1)
-          {
-            ct++;
-            vl = vl >> 1;
-          }
-        int stvl = 1 << ct;
+        int stvl;
+        log2floor(stvl, vl);
 	for (j=0; j<n; j++)
 	{
           setvl(vl, stvl);
