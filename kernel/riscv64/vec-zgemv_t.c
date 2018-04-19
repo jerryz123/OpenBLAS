@@ -122,8 +122,8 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG dummy1, FLOAT alpha_r, FLOAT alpha_i,
             }
           FLOAT f_r;
           FLOAT f_i;
-          asm volatile ("vst v2, 0(%0)" : : "r" (&f_r));
-          asm volatile ("vst v6, 0(%0)" : : "r" (&f_i));
+          asm volatile ("vextract %0, v2, x0" : "=r" (f_r));
+          asm volatile ("vextract %0, v6, x0" : "=r" (f_i));
 #if !defined(XCONJ)
           y[iy]   += alpha_r * f_r - alpha_i * f_i;
           y[iy+1] += alpha_r * f_i + alpha_i * f_r;

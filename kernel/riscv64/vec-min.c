@@ -82,7 +82,8 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
             setvl(vl, vl >> 1);
             asm volatile ("vmin   v2, v2, v0");
           }
-        asm volatile ("vst      v2, 0(%0)" : : "r" (&maxf));
+
+        asm volatile ("vextract %0, v2, x0" : "=r" (maxf));
 	return(maxf);
 
 }

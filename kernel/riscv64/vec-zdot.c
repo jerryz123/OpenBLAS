@@ -119,11 +119,13 @@ OPENBLAS_COMPLEX_FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLA
             asm volatile ("vadd   v2, v2, v0"); // acc[] = acc[] + acc[+vl]
             asm volatile ("vadd   v6, v6, v4");
           }
-        asm volatile ("vst v2, 0(%0)" : : "r" (&dot[0]));
-        asm volatile ("vst v6, 0(%0)" : : "r" (&dot[1]));
+        FLOAT dot0;
+        FLOAT dot1;
+        asm volatile ("vextract %0, v2, x0" : "=r" (dot0));
+        asm volatile ("vextract %0, v6, x0" : "=r" (dot1));
 
-	CREAL(result) = dot[0];
-	CIMAG(result) = dot[1];
+	CREAL(result) = dot0;
+	CIMAG(result) = dot1;
 	return(result);
 
 }

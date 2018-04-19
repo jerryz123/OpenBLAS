@@ -88,8 +88,8 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x)
             setvl(vl, vl >> 1);
             asm volatile ("vadd   v2, v2, v0");
           }
-        asm volatile ("vst      v2, 0(%0)" : : "r" (&scale));
 
+        asm volatile ("vextract %0, v2, x0" : "=r" (scale));
 	return(sqrt(scale));
         // TODO: Make this the more stable streaming algorithm
 }

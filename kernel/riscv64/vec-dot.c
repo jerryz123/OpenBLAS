@@ -94,7 +94,8 @@ FLOAT CNAME(BLASLONG n, FLOAT *x, BLASLONG inc_x, FLOAT *y, BLASLONG inc_y)
             setvl(vl, vl >> 1);
             asm volatile ("vadd   v2, v2, v0");
           }
-        asm volatile ("vst      v2, 0(%0)" : : "r" (&dot));
+
+        asm volatile ("vextract %0, v2, x0" : "=r" (dot));
 
 
 	return(dot);

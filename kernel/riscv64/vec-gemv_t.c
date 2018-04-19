@@ -98,7 +98,8 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG dummy1, FLOAT alpha, FLOAT *a, BLASLO
               asm volatile ("vadd v2, v2, v0");
             }
           FLOAT f;
-          asm volatile ("vst v2, 0(%0)" : : "r" (&f));
+
+          asm volatile ("vextract %0, v2, x0" : "=r" (f));
           y[iy] += alpha*f;
           iy += inc_y;
           a_ptr += lda;
