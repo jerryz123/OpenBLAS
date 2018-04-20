@@ -97,13 +97,13 @@ DGEMMOTCOPY    = ../riscv64/vec-gemm_tcopy_2.c
 DGEMMONCOPYOBJ = dgemm_oncopy.o
 DGEMMOTCOPYOBJ = dgemm_otcopy.o
 
-CGEMMKERNEL    = ../generic/zgemmkernel_2x2.c
+CGEMMKERNEL    = ../riscv64/vec-zgemmkernel_2x2.c
 CGEMMONCOPY    = ../generic/zgemm_ncopy_2.c
 CGEMMOTCOPY    = ../generic/zgemm_tcopy_2.c
 CGEMMONCOPYOBJ =  cgemm_oncopy.o
 CGEMMOTCOPYOBJ =  cgemm_otcopy.o
 
-ZGEMMKERNEL    = ../generic/zgemmkernel_2x2.c
+ZGEMMKERNEL    = ../riscv64/vec-zgemmkernel_2x2.c
 ZGEMMONCOPY    = ../generic/zgemm_ncopy_2.c
 ZGEMMOTCOPY    = ../generic/zgemm_tcopy_2.c
 ZGEMMONCOPYOBJ =  zgemm_oncopy.o

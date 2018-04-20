@@ -123,10 +123,14 @@ static inline int blas_quickdivide(blasint x, blasint y){
 #define ABS fabs
 #define STRIDE_W 3
 #define STRIDE_O "8"
+#define STRIDE_O2 "16"
+#define STRIDE_O3 "24"
 #else
 #define ABS fabsf
 #define STRIDE_W 2
 #define STRIDE_O "4"
+#define STRIDE_O2 "8"
+#define STRIDE_O3 "12"
 #endif
 /* #define setvcfg(vcfg, vtype0, vtype1, vtype2, vtype3) \ */
 /*   li t0, ((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)) ; \ */
@@ -140,6 +144,9 @@ static inline int blas_quickdivide(blasint x, blasint y){
 
 #define setvcfg4(vtype0, vtype1, vtype2, vtype3)                        \
   asm volatile ("csrw vcfg4, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
+
+#define setvcfg6(vtype0, vtype1, vtype2, vtype3)                        \
+  asm volatile ("csrw vcfg6, %0" : : "r" (((vtype0) | ((vtype1) << 16) | ((vtype2) << 32) | ((vtype3) << 48)))) \
 
 #define resetvcfg() \
   asm volatile ("csrw vcfg0, x0"); \
