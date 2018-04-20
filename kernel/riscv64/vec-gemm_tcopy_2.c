@@ -41,60 +41,83 @@
 
 int CNAME(BLASLONG m, BLASLONG n, FLOAT *a, BLASLONG lda, FLOAT *b){
   BLASLONG i, j;
+
   FLOAT *a_offset, *a_offset1, *a_offset2;
-  FLOAT *b_offset;
+  FLOAT *b_offset, *b_offset1, *b_offset2;
 
   a_offset = a;
   b_offset = b;
+  b_offset2 = b + m * (n & ~1);
 
-  j = (n >> 1);
+  i = (m >> 1);
 
   resetvcfg();
 #if defined(DOUBLE)
-  setvcfg0(VFP64, //a_offset1
-           VFP64, //a_offset2
-           SFP64,
-           SFP64);
+  setvcfg0(VFP64, //a_offset10
+           VFP64, //a_offset11
+           VFP64, //a_offset20
+           VFP64);//a_offset21
 #else
   setvcfg0(VFP32, //a_offset1
            VFP32, //a_offset2
-           SFP32,
-           SFP32);
+           VFP32,
+           VFP32);
 #endif
   int vl;
-
-  if (j > 0){
+  if (i > 0) {
     do {
       a_offset1 = a_offset;
       a_offset2 = a_offset + lda;
       a_offset += 2 * lda;
-      i = 0;
-      while (i < m)
+
+      b_offset1 = b_offset;
+      b_offset += 4;
+
+      j = (n >> 1);
+      while (j > 0)
         {
-          setvl(vl, m - i);
-          asm volatile ("vld  v0, 0(%0)" : : "r" (a_offset1));
-          asm volatile ("vld  v1, 0(%0)" : : "r" (a_offset2));
-          asm volatile ("vsts v0, 0(%0), %1" : : "r" (b_offset), "r" (2 << STRIDE_W));
-          asm volatile ("vsts v1, " STRIDE_O "(%0), %1" : : "r" (b_offset), "r" (2 << STRIDE_W));
-          a_offset1 += vl;
-          a_offset2 += vl;
-          b_offset += 2 * vl;
-          i = i + vl;
+          setvl(vl, j);
+          asm volatile ("vlds v0, 0(%0), %1"            : : "r" (a_offset1), "r" (2 << STRIDE_W));
+          asm volatile ("vlds v1, " STRIDE_O "(%0), %1" : : "r" (a_offset1), "r" (2 << STRIDE_W));
+          asm volatile ("vlds v2, 0(%0), %1"            : : "r" (a_offset2), "r" (2 << STRIDE_W));
+          asm volatile ("vlds v3, " STRIDE_O "(%0), %1" : : "r" (a_offset2), "r" (2 << STRIDE_W));
+
+          asm volatile ("vsts v0, 0(%0), %1"            : : "r" (b_offset1), "r" (m*2 << STRIDE_W));
+          asm volatile ("vsts v1, " STRIDE_O "(%0), %1" : : "r" (b_offset1), "r" (m*2 << STRIDE_W));
+          asm volatile ("vsts v2, " STRIDE_O2"(%0), %1" : : "r" (b_offset1), "r" (m*2 << STRIDE_W));
+          asm volatile ("vsts v3, " STRIDE_O3"(%0), %1" : : "r" (b_offset1), "r" (m*2 << STRIDE_W));
+          a_offset1 += 2 * vl;
+          a_offset2 += 2 * vl;
+          b_offset1 += m * 2 * vl;
+          j -= vl;
         }
-      j --;
-    } while (j > 0);
+
+      if (n & 1){
+	  *(b_offset2 + 0) = *(a_offset1 + 0);
+	  *(b_offset2 + 1) = *(a_offset2 + 0);
+	  b_offset2 += 2;
+      }
+      i --;
+    } while (i > 0);
   }
 
-  if (n & 1){
-    i = 0;
-    while (i < m)
+  if (m & 1) {
+    j = (n >> 1);
+    while (j > 0)
       {
-        setvl(vl, m - i);
-        asm volatile ("vld   v0, 0(%0)" : : "r" (a_offset));
-        asm volatile ("vst   v0, 0(%0)" : : "r" (b_offset));
-        a_offset += vl;
-        b_offset += vl;
-        i += vl;
+        setvl(vl, j);
+        asm volatile ("vlds v0, 0(%0), %1"            : : "r" (a_offset), "r" (2 << STRIDE_W));
+        asm volatile ("vlds v1, " STRIDE_O "(%0), %1" : : "r" (a_offset), "r" (2 << STRIDE_W));
+        asm volatile ("vsts v0, 0(%0), %1"            : : "r" (b_offset), "r" (m*2 << STRIDE_W));
+        asm volatile ("vsts v1, " STRIDE_O "(%0), %1" : : "r" (b_offset), "r" (m*2 << STRIDE_W));
+        a_offset += 2 * vl;
+        b_offset += m * 2 * vl;
+        j -= vl;
+      }
+
+
+    if (n & 1){
+      *(b_offset2 + 0) = *(a_offset + 0);
       }
   }
 
