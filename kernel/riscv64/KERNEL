@@ -86,7 +86,7 @@ CTRMMKERNEL	= ../generic/ztrmmkernel_2x2.c
 ZTRMMKERNEL	= ../generic/ztrmmkernel_2x2.c
 
 SGEMMKERNEL    =  ../riscv64/vec-gemmkernel_2x2.c
-SGEMMONCOPY    =  ../generic/gemm_ncopy_2.c
+SGEMMONCOPY    =  ../riscv64/vec-gemm_ncopy_2.c
 SGEMMOTCOPY    =  ../generic/gemm_tcopy_2.c
 SGEMMONCOPYOBJ =  sgemm_oncopy.o
 SGEMMOTCOPYOBJ =  sgemm_otcopy.o
