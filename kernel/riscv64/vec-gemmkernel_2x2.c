@@ -32,7 +32,6 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alpha,FLOAT* ba,FLOAT* bb,FL
 #endif
    setvl(vl, bk);
    log2floor(stvl, vl);
-   stvl = 1 << 3;
    setvl(vl, stvl);
    for (j=0; j<bn/2; j+=1)
      {
@@ -43,27 +42,15 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alpha,FLOAT* ba,FLOAT* bb,FL
           {
              ptrbb = bb;
              setvl(vl, stvl);
-             asm volatile("vsne v0, v0, v0");
-             asm volatile("vsne v1, v1, v1");
-             asm volatile("vsne v2, v2, v2");
-             asm volatile("vsne v3, v3, v3");
-             res0 = res1 = res2 = res3 = 0;
+             asm volatile("vsne v4, v4, v4");
+             asm volatile("vsne v5, v5, v5");
+             asm volatile("vsne v6, v6, v6");
+             asm volatile("vsne v7, v7, v7");
              k = 0;
 
              while (k<bk)
                {
-                 /* load0 = ptrba[2*0+0]; */
-                 /* load1 = ptrbb[2*0+0]; */
-                 /* res0 = res0+load0*load1; */
-                 /* load2 = ptrba[2*0+1]; */
-                 /* res1 = res1+load2*load1; */
-                 /* load3 = ptrbb[2*0+1]; */
-                 /* res2 = res2+load0*load3; */
-                 /* res3 = res3+load2*load3; */
-                 /* ptrba = ptrba+2; */
-                 /* ptrbb = ptrbb+2; */
-
-                 while (bk - k < vl && vl)
+                 while (bk - k < vl)
                    {
                      asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
                      asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
@@ -75,7 +62,7 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alpha,FLOAT* ba,FLOAT* bb,FL
                      asm volatile ("vadd   v6, v6, v2");
                      asm volatile ("vadd   v7, v7, v3");
                    }
-             /*      /\* volatile FLOAT __t = ptrbb[0]; *\/ */
+
                   asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
                   asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
                   asm volatile ("vmadd v4, v0, v1, v4");
@@ -88,45 +75,71 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alpha,FLOAT* ba,FLOAT* bb,FL
                   ptrba = ptrba + vl * 2;
                   ptrbb = ptrbb + vl * 2;
                }
-             //asm volatile ("vst v4, 0(%0)" : : "r" (&res0));
+
+             while (vl > 1)
+               {
+                 asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v2, v6, %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v3, v7, %0" : : "r" (vl >> 1));
+                 setvl(vl, vl >> 1);
+                 asm volatile ("vadd   v4, v4, v0");
+                 asm volatile ("vadd   v5, v5, v1");
+                 asm volatile ("vadd   v6, v6, v2");
+                 asm volatile ("vadd   v7, v7, v3");
+               }
+
              asm volatile ("vextract %0, v4, x0" : "=r" (res0));
              asm volatile ("vextract %0, v5, x0" : "=r" (res1));
              asm volatile ("vextract %0, v6, x0" : "=r" (res2));
              asm volatile ("vextract %0, v7, x0" : "=r" (res3));
-             //asm volatile ("vst v5, 0(%0)" : : "r" (&res1));
-             //asm volatile ("vst v6, 0(%0)" : : "r" (&res2));
-             //asm volatile ("vst v7, 0(%0)" : : "r" (&res3));
-             res0 = res0*alpha;
-             res1 = res1*alpha;
-             res2 = res2*alpha;
-             res3 = res3*alpha;
-             C0[0] = C0[0]+res0;
-             C0[1] = C0[1]+res1;
-             C1[0] = C1[0]+res2;
-             C1[1] = C1[1]+res3;
+
+             C0[0] = C0[0]+res0*alpha;
+             C0[1] = C0[1]+res1*alpha;
+             C1[0] = C1[0]+res2*alpha;
+             C1[1] = C1[1]+res3*alpha;
              C0 = C0+2;
              C1 = C1+2;
           }
         for (i=0; i<(bm&1); i+=1)
           {
              ptrbb = bb;
-             res0 = 0;
-             res1 = 0;
-             for (k=0; k<bk; k+=1)
+             setvl(vl, stvl);
+             asm volatile("vsne v4, v4, v4");
+             asm volatile("vsne v5, v5, v5");
+             k = 0;
+             while (k<bk)
                {
-                  load0 = ptrba[0+0];
-                  load1 = ptrbb[2*0+0];
-                  load2 = ptrbb[2*0+1];
+                 while (bk - k < vl)
+                   {
+                     asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                     asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
+                     setvl(vl, vl >> 1);
+                     asm volatile ("vadd   v4, v4, v0");
+                     asm volatile ("vadd   v5, v5, v1");
+                   }
 
-                  res0 = res0+load0*load1;
-                  res1 = res1+load0*load2;
-                  ptrba = ptrba+1;
-                  ptrbb = ptrbb+2;
+                  asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (1 << STRIDE_W));
+                  asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+                  asm volatile ("vmadd v4, v0, v1, v4");
+                  asm volatile ("vlds  v2, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+                  asm volatile ("vmadd v5, v0, v2, v5");
+                  k += vl;
+                  ptrba = ptrba + vl;
+                  ptrbb = ptrbb + vl * 2;
                }
-             res0 = res0*alpha;
-             res1 = res1*alpha;
-             C0[0] = C0[0]+res0;
-             C1[0] = C1[0]+res1;
+             while (vl > 1)
+               {
+                 asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
+                 setvl(vl, vl >> 1);
+                 asm volatile ("vadd   v4, v4, v0");
+                 asm volatile ("vadd   v5, v5, v1");
+               }
+             asm volatile ("vextract %0, v4, x0" : "=r" (res0));
+             asm volatile ("vextract %0, v5, x0" : "=r" (res1));
+             C0[0] = C0[0]+res0*alpha;
+             C1[0] = C1[0]+res1*alpha;
              C0 = C0+1;
              C1 = C1+1;
           }
@@ -137,43 +150,81 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alpha,FLOAT* ba,FLOAT* bb,FL
      }
    for (j=0; j<(bn&1); j+=1)
      {
-        C0 = C;
-        ptrba = ba;
-        for (i=0; i<bm/2; i+=1)
-          {
-             ptrbb = bb;
-             res0 = 0;
-             res1 = 0;
-             for (k=0; k<bk; k+=1)
-               {
-                  load0 = ptrba[2*0+0];
-                  load1 = ptrbb[0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[2*0+1];
-                  res1 = res1+load2*load1;
-                  ptrba = ptrba+2;
-                  ptrbb = ptrbb+1;
-               }
-             res0 = res0*alpha;
-             C0[0] = C0[0]+res0;
-             res1 = res1*alpha;
-             C0[1] = C0[1]+res1;
-             C0 = C0+2;
-          }
+       C0 = C;
+       ptrba = ba;
+       for (i=0; i<bm/2; i+=1)
+         {
+           ptrbb = bb;
+           setvl(vl, stvl);
+           asm volatile("vsne v4, v4, v4");
+           asm volatile("vsne v5, v5, v5");
+           k = 0;
+           while (k<bk)
+             {
+               while (bk - k < vl)
+                 {
+                   asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                   asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
+                   setvl(vl, vl >> 1);
+                   asm volatile ("vadd   v4, v4, v0");
+                   asm volatile ("vadd   v5, v5, v1");
+                 }
+               
+               asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+               asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (1 << STRIDE_W));
+               asm volatile ("vmadd v4, v0, v1, v4");
+               asm volatile ("vlds  v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+               asm volatile ("vmadd v5, v2, v1, v5");
+               k += vl;
+               ptrba = ptrba + vl * 2;
+               ptrbb = ptrbb + vl;
+             }
+           while (vl > 1)
+             {
+               asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+               asm volatile ("vslide v1, v5, %0" : : "r" (vl >> 1));
+               setvl(vl, vl >> 1);
+               asm volatile ("vadd   v4, v4, v0");
+               asm volatile ("vadd   v5, v5, v1");
+             }
+           asm volatile ("vextract %0, v4, x0" : "=r" (res0));
+           asm volatile ("vextract %0, v5, x0" : "=r" (res1));
+           
+           C0[0] = C0[0]+res0*alpha;
+           C0[1] = C0[1]+res1*alpha;
+           C0 = C0+2;
+         }
+      
         for (i=0; i<(bm&1); i+=1)
           {
              ptrbb = bb;
-             res0 = 0;
-             for (k=0; k<bk; k+=1)
+             setvl(vl, stvl);
+             asm volatile("vsne v4, v4, v4");
+             k = 0;
+             while (k<bk)
                {
-                  load0 = ptrba[0+0];
-                  load1 = ptrbb[0+0];
-                  res0 = res0+load0*load1;
-                  ptrba = ptrba+1;
-                  ptrbb = ptrbb+1;
+                 while (bk - k < vl)
+                   {
+                     asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                     setvl(vl, vl >> 1);
+                     asm volatile ("vadd   v4, v4, v0");
+                   }
+
+                  asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (1 << STRIDE_W));
+                  asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (1 << STRIDE_W));
+                  asm volatile ("vmadd v4, v0, v1, v4");
+                  k += vl;
+                  ptrba = ptrba + vl;
+                  ptrbb = ptrbb + vl;
                }
-             res0 = res0*alpha;
-             C0[0] = C0[0]+res0;
+             while (vl > 1)
+               {
+                 asm volatile ("vslide v0, v4, %0" : : "r" (vl >> 1));
+                 setvl(vl, vl >> 1);
+                 asm volatile ("vadd   v4, v4, v0");
+               }
+             asm volatile ("vextract %0, v4, x0" : "=r" (res0));
+             C0[0] = C0[0]+res0*alpha;
              C0 = C0+1;
           }
         k = (bk<<0);
