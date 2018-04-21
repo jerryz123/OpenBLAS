@@ -431,7 +431,7 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alphar,FLOAT alphai,FLOAT* b
              asm volatile ("vextract %0, v9,  x0" : "=r" (res1));
              asm volatile ("vextract %0, v10, x0" : "=r" (res2));
              asm volatile ("vextract %0, v11, x0" : "=r" (res3));
-             
+
              load0 = res0*alphar;
              C0[0] = C0[0]+load0;
              load1 = res1*alphar;
@@ -463,79 +463,130 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alphar,FLOAT alphai,FLOAT* b
         for (i=0; i<bm/2; i+=1)
           {
              ptrbb = bb;
+             setvl(vl, stvl);
+             asm volatile ("vsne v8,  v8,  v8");
+             asm volatile ("vsne v9,  v9,  v9");
+             asm volatile ("vsne v10, v10, v10");
+             asm volatile ("vsne v11, v11, v11");
              res0 = 0;
              res1 = 0;
              res2 = 0;
              res3 = 0;
-             for (k=0; k<bk; k+=1)
+             k = 0;
+             while (k < bk)
                {
+                 while (bk - k < vl)
+                   {
+                     asm volatile ("vslide v0, v8,  %0" : : "r" (vl >> 1));
+                     asm volatile ("vslide v1, v9,  %0" : : "r" (vl >> 1));
+                     asm volatile ("vslide v2, v10, %0" : : "r" (vl >> 1));
+                     asm volatile ("vslide v3, v11, %0" : : "r" (vl >> 1));
+                     setvl(vl, vl >> 1);
+                     asm volatile ("vadd   v8,  v8,  v0");
+                     asm volatile ("vadd   v9,  v9,  v1");
+                     asm volatile ("vadd   v10, v10, v2");
+                     asm volatile ("vadd   v11, v11, v3");
+                   }
 #if   defined(NN) || defined(NT) || defined(TN) || defined(TT)
-                  load0 = ptrba[4*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[4*0+1];
-                  res1 = res1+load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0-load2*load3;
-                  res1 = res1+load0*load3;
-                  load4 = ptrba[4*0+2];
-                  res2 = res2+load4*load1;
-                  load5 = ptrba[4*0+3];
-                  res3 = res3+load5*load1;
-                  res2 = res2-load5*load3;
-                  res3 = res3+load4*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd v8, v0, v1, v8");
+                 asm volatile ("vlds  v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v9, v2, v1, v9");
+                 asm volatile ("vlds  v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vnmsub v8, v2, v3, v8");
+                 asm volatile ("vmadd  v9, v0, v3, v9");
+
+                 asm volatile ("vlds  v4, " STRIDE_O2"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v10, v4, v1, v10");
+
+                 asm volatile ("vlds  v5, " STRIDE_O3"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v11, v5, v1, v11");
+                 asm volatile ("vnmsub v10, v5, v3, v10");
+                 asm volatile ("vmadd  v11, v4, v3, v11");
 #endif
 #if   defined(NR) || defined(NC) || defined(TR) || defined(TC)
-                  load0 = ptrba[4*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[4*0+1];
-                  res1 = res1+load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0+load2*load3;
-                  res1 = res1-load0*load3;
-                  load4 = ptrba[4*0+2];
-                  res2 = res2+load4*load1;
-                  load5 = ptrba[4*0+3];
-                  res3 = res3+load5*load1;
-                  res2 = res2+load5*load3;
-                  res3 = res3-load4*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd v8, v0, v1, v8");
+                 asm volatile ("vlds  v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v9, v2, v1, v9");
+                 asm volatile ("vlds  v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v2, v3, v8");
+                 asm volatile ("vnmsub v9, v0, v3, v9");
+
+                 asm volatile ("vlds  v4, " STRIDE_O2"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v10, v4, v1, v10");
+
+                 asm volatile ("vlds  v5, " STRIDE_O3"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd  v11, v5, v1, v11");
+                 asm volatile ("vmadd  v10, v5, v3, v10");
+                 asm volatile ("vnmsub v11, v4, v3, v11");
 #endif
 #if   defined(RN) || defined(RT) || defined(CN) || defined(CT)
-                  load0 = ptrba[4*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[4*0+1];
-                  res1 = res1-load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0+load2*load3;
-                  res1 = res1+load0*load3;
-                  load4 = ptrba[4*0+2];
-                  res2 = res2+load4*load1;
-                  load5 = ptrba[4*0+3];
-                  res3 = res3-load5*load1;
-                  res2 = res2+load5*load3;
-                  res3 = res3+load4*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vnmsub v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v2, v3, v8");
+                 asm volatile ("vmadd  v9, v0, v3, v9");
+
+                 asm volatile ("vlds  v4, " STRIDE_O2"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v10, v4, v1, v10");
+
+                 asm volatile ("vlds  v5, " STRIDE_O3"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vnmsub v11, v5, v1, v11");
+                 asm volatile ("vmadd  v10, v5, v3, v10");
+                 asm volatile ("vmadd  v11, v4, v3, v11");
 #endif
 #if   defined(RR) || defined(RC) || defined(CR) || defined(CC)
-                  load0 = ptrba[4*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[4*0+1];
-                  res1 = res1-load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0-load2*load3;
-                  res1 = res1-load0*load3;
-                  load4 = ptrba[4*0+2];
-                  res2 = res2+load4*load1;
-                  load5 = ptrba[4*0+3];
-                  res3 = res3-load5*load1;
-                  res2 = res2-load5*load3;
-                  res3 = res3-load4*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vnmsub v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vnmsub  v8, v2, v3, v8");
+                 asm volatile ("vnmsub  v9, v0, v3, v9");
+
+                 asm volatile ("vlds  v4, " STRIDE_O2"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vmadd v10, v4, v1, v10");
+
+                 asm volatile ("vlds  v5, " STRIDE_O3"(%0), %1" : : "r" (ptrba), "r" (4 << STRIDE_W));
+                 asm volatile ("vnmsub v11, v5, v1, v11");
+                 asm volatile ("vnmsub v10, v5, v3, v10");
+                 asm volatile ("vnmsub v11, v4, v3, v11");
 #endif
-                  ptrba = ptrba+4;
-                  ptrbb = ptrbb+2;
+                 ptrba = ptrba+4*vl;
+                 ptrbb = ptrbb+2*vl;
+                 k += vl;
                }
+             while (vl > 1)
+               {
+                 asm volatile ("vslide v0, v8,  %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v1, v9,  %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v2, v10, %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v3, v11, %0" : : "r" (vl >> 1));
+                 setvl(vl, vl >> 1);
+                 asm volatile ("vadd   v8,  v8,  v0");
+                 asm volatile ("vadd   v9,  v9,  v1");
+                 asm volatile ("vadd   v10, v10, v2");
+                 asm volatile ("vadd   v11, v11, v3");
+               }
+             asm volatile ("vextract %0, v8,  x0" : "=r" (res0));
+             asm volatile ("vextract %0, v9,  x0" : "=r" (res1));
+             asm volatile ("vextract %0, v10, x0" : "=r" (res2));
+             asm volatile ("vextract %0, v11, x0" : "=r" (res3));
              load0 = res0*alphar;
              C0[0] = C0[0]+load0;
              load1 = res1*alphar;
@@ -557,53 +608,84 @@ int CNAME(BLASLONG bm,BLASLONG bn,BLASLONG bk,FLOAT alphar,FLOAT alphai,FLOAT* b
         for (i=0; i<(bm&1); i+=1)
           {
              ptrbb = bb;
+             setvl(vl, stvl);
+             asm volatile ("vsne v8,  v8,  v8");
+             asm volatile ("vsne v9,  v9,  v9");
              res0 = 0;
              res1 = 0;
-             for (k=0; k<bk; k+=1)
+             k = 0;
+             while (k < bk)
                {
+                 while (bk - k < vl)
+                   {
+                     asm volatile ("vslide v0, v8,  %0" : : "r" (vl >> 1));
+                     asm volatile ("vslide v1, v9,  %0" : : "r" (vl >> 1));
+                     setvl(vl, vl >> 1);
+                     asm volatile ("vadd   v8,  v8,  v0");
+                     asm volatile ("vadd   v9,  v9,  v1");
+                   }
 #if   defined(NN) || defined(NT) || defined(TN) || defined(TT)
-                  load0 = ptrba[2*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[2*0+1];
-                  res1 = res1+load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0-load2*load3;
-                  res1 = res1+load0*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vmadd  v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vnmsub  v8, v2, v3, v8");
+                 asm volatile ("vmadd   v9, v0, v3, v9");
 #endif
 #if   defined(NR) || defined(NC) || defined(TR) || defined(TC)
-                  load0 = ptrba[2*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[2*0+1];
-                  res1 = res1+load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0+load2*load3;
-                  res1 = res1-load0*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vmadd  v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v2, v3, v8");
+                 asm volatile ("vnmsub v9, v0, v3, v9");
 #endif
 #if   defined(RN) || defined(RT) || defined(CN) || defined(CT)
-                  load0 = ptrba[2*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[2*0+1];
-                  res1 = res1-load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0+load2*load3;
-                  res1 = res1+load0*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vnmsub v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v2, v3, v8");
+                 asm volatile ("vmadd  v9, v0, v3, v9");
 #endif
 #if   defined(RR) || defined(RC) || defined(CR) || defined(CC)
-                  load0 = ptrba[2*0+0];
-                  load1 = ptrbb[2*0+0];
-                  res0 = res0+load0*load1;
-                  load2 = ptrba[2*0+1];
-                  res1 = res1-load2*load1;
-                  load3 = ptrbb[2*0+1];
-                  res0 = res0-load2*load3;
-                  res1 = res1-load0*load3;
+                 asm volatile ("vlds  v0, 0(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vlds  v1, 0(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vmadd  v8, v0, v1, v8");
+                 asm volatile ("vlds   v2, " STRIDE_O "(%0), %1" : : "r" (ptrba), "r" (2 << STRIDE_W));
+                 asm volatile ("vnmsub v9, v2, v1, v9");
+                 asm volatile ("vlds   v3, " STRIDE_O "(%0), %1" : : "r" (ptrbb), "r" (2 << STRIDE_W));
+
+                 asm volatile ("vnmsub v8, v2, v3, v8");
+                 asm volatile ("vnmsub v9, v0, v3, v9");
 #endif
-                  ptrba = ptrba+2;
-                  ptrbb = ptrbb+2;
+                 ptrba = ptrba+2*vl;
+                 ptrbb = ptrbb+2*vl;
+                 k += vl;
                }
+             while (vl > 1)
+               {
+                 asm volatile ("vslide v0, v8,  %0" : : "r" (vl >> 1));
+                 asm volatile ("vslide v1, v9,  %0" : : "r" (vl >> 1));
+                 setvl(vl, vl >> 1);
+                 asm volatile ("vadd   v8,  v8,  v0");
+                 asm volatile ("vadd   v9,  v9,  v1");
+               }
+             asm volatile ("vextract %0, v8,  x0" : "=r" (res0));
+             asm volatile ("vextract %0, v9,  x0" : "=r" (res1));
              load0 = res0*alphar;
              C0[0] = C0[0]+load0;
              load1 = res1*alphar;
